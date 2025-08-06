@@ -16,7 +16,9 @@ from typing import Any
 import pathlib
 from .models import ListModel, Model
 from .slint import Image, Color, Brush, Timer, TimerMode
+from .loop import SlintEventLoop
 from pathlib import Path
+from collections.abc import Coroutine
 
 Struct = native.PyStruct
 
@@ -50,9 +52,11 @@ class Component:
 
         self.__instance__.hide()
 
-    def run(self) -> None:
+    def run(self, main_coro: typing.Optional[Coroutine[None, None, None]] = None) -> None:
         """Shows the window, runs the event loop, hides it when the loop is quit, and returns."""
-        self.__instance__.run()
+        self.show()
+        run_event_loop(main_coro)
+        self.hide()
 
 
 def _normalize_prop(name: str) -> str:
@@ -425,6 +429,11 @@ def set_xdg_app_id(app_id: str) -> None:
 
     native.set_xdg_app_id(app_id)
 
+def run_event_loop(main_coro: typing.Optional[Coroutine[None, None, None]] = None) -> None:
+    """Runs the main Slint event loop. The optionally specified coroutine is run in paralle."""
+    loop = SlintEventLoop()
+    loop.create_task(main_coro)
+    native.run_event_loop(loop)
 
 __all__ = [
     "CompileError",
@@ -440,4 +449,5 @@ __all__ = [
     "TimerMode",
     "set_xdg_app_id",
     "callback",
+    "run_event_loop",
 ]
